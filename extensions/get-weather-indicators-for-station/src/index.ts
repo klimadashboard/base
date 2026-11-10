@@ -15,7 +15,7 @@ export default {
 
 			try {
 				const rows = await database(table)
-					.select(["date", "tlmax", "tlmin"])
+					.select(["date", "tlmax", "tlmin", "sh"])
 					.where("station", station);
 
 				const indicators: Record<string, any> = {};
