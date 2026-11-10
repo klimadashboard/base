@@ -1,0 +1,38 @@
+{
+	"name": "data-upload",
+	"description": "Passwortgeschütztes Upload-Portal: Städte laden Excel/CSV/Screenshots/PDFs hoch, Claude extrahiert die Daten, Freigabe über Slack schreibt sie in die Datenbank.",
+	"icon": "upload_file",
+	"version": "1.0.0",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-extension-endpoint"
+	],
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"directus:extension": {
+		"type": "endpoint",
+		"path": "dist/index.js",
+		"source": "src/index.ts",
+		"host": "^10.10.0"
+	},
+	"scripts": {
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"validate": "directus-extension validate"
+	},
+	"dependencies": {
+		"@anthropic-ai/sdk": "^0.131.0",
+		"busboy": "^1.6.0",
+		"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "^16.0.2",
+		"@types/busboy": "^1.5.4",
+		"@types/node": "^26.6.4",
+		"typescript": "^7.0.2"
+	}
+}
