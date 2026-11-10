@@ -7,6 +7,15 @@ const cache = new LRUCache<string, any>({
 	ttl: 1000 * 60 * 60 * 6, // 6 hours
 });
 
+// Unit tables with the shared schema (commissioning_date, shutdown_date,
+// net_power_kw, region, country, type, status, last_update)
+const TABLES = [
+	"energy_solar_units",
+	"energy_wind_units",
+	"energy_biomass_units",
+	"energy_hydro_units",
+];
+
 // Helper to check if a string looks like a UUID
 function isUUID(str: string): boolean {
 	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -19,7 +28,7 @@ async function resolveRegionCodes(
 	database: any,
 	regionInput: string,
 	country: string
-): Promise<{ codes: string[]; usePrefix: boolean; prefix: string | null }> {
+): Promise<{ codes: string[]; usePrefix: boolean; prefix: string | null; prefixes?: string[] }> {
 	// First, try to find the region in the regions table, prioritizing the requested country
 	// Only include id in the search if it looks like a UUID (to avoid PostgreSQL type errors)
 	const includeId = isUUID(regionInput);
@@ -66,6 +75,22 @@ async function resolveRegionCodes(
 	// Get the best available code (prefer code_short, fall back to code)
 	const regionCode = regionRow.code_short || regionRow.code;
 
+	// Metropolitan regions (e.g. EMN): match the AGS prefixes of their districts
+	if (regionRow.layer === "metropolitan_region") {
+		const districts = await database("regions")
+			.select("code_short", "code")
+			.where("layer", "district")
+			.andWhereRaw("parents::jsonb @> ?::jsonb", [
+				JSON.stringify([{ id: regionRow.id }]),
+			]);
+		const prefixes = districts
+			.map((d: any) => String(d.code_short || d.code || "").slice(0, 5))
+			.filter(Boolean);
+		// No districts found: match nothing rather than all of Germany
+		if (!prefixes.length) return { codes: ["__none__"], usePrefix: false, prefix: null };
+		return { codes: [], usePrefix: true, prefix: null, prefixes };
+	}
+
 	// For German regions, use AGS prefix matching based on layer
 	if (regionRow.country === "DE" && regionCode) {
 		const layer = regionRow.layer;
@@ -109,7 +134,8 @@ async function resolveRegionList(
 	const merged = { codes: [] as string[], usePrefix: false, prefix: null, prefixes: [] as string[] };
 	for (const input of inputs) {
 		const resolved = await resolveRegionCodes(database, input, country);
-		if (resolved.usePrefix && resolved.prefix) merged.prefixes.push(resolved.prefix);
+		if (resolved.prefixes?.length) merged.prefixes.push(...resolved.prefixes);
+		else if (resolved.usePrefix && resolved.prefix) merged.prefixes.push(resolved.prefix);
 		else merged.codes.push(...resolved.codes);
 	}
 	return merged;
@@ -156,10 +182,9 @@ export default {
 			const statusFilter = req.query.status as string | undefined;
 			const optionalFilters = { type: typeFilter, status: statusFilter };
 
-			if (!["energy_solar_units", "energy_wind_units"].includes(table)) {
+			if (!TABLES.includes(table)) {
 				return res.status(400).json({
-					error:
-						"Invalid table. Use ?table=energy_solar_units or energy_wind_units",
+					error: `Invalid table. Use ?table=${TABLES.join("|")}`,
 				});
 			}
 

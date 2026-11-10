@@ -13,7 +13,12 @@ type RowOut = {
 };
 
 const ONE_HOUR_MS = 36e5;
-const TABLES = ["energy_solar_units", "energy_wind_units"] as const;
+const TABLES = [
+	"energy_solar_units",
+	"energy_wind_units",
+	"energy_biomass_units",
+	"energy_hydro_units",
+] as const;
 const LEVELS = ["municipality", "district", "state", "country"] as const;
 
 const FIELDS = {
@@ -120,7 +125,7 @@ export default {
 				if (!TABLES.includes(table as any)) {
 					return res.status(400).json({
 						error:
-							"Missing or invalid table. Use ?table=energy_solar_units or energy_wind_units",
+							`Missing or invalid table. Use ?table=${TABLES.join("|")}`,
 					});
 				}
 				if (!LEVELS.includes(level as any)) {
