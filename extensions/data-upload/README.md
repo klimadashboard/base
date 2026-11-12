@@ -69,7 +69,7 @@ Nennt die Datei keine Quelle, wird die Quelle des neuesten vorhandenen Werts der
 
 ## Hinweise
 
-- Pkw-Neuzulassungen (`mobility_cars_registrations`) sind **kumulativ seit Jahresbeginn** (so wie bisher in `mobility_cars_registrations`). `Sonstige` = Brennstoffzelle + Flüssiggas + Erdgas + Sonstige.
+- Pkw-Neuzulassungen (`mobility_cars_registrations`) sind seit November 2026 **Monatswerte**, nicht mehr kumulativ seit Jahresbeginn. Zu nehmen ist die Spalte `zulassungen_neufahrzeuge`; die ähnlich klingenden Spalten `neuzulassungen` und `neufahrzeuge` sind die alten kumulativen Werte, `zulassungen` sind alle Zulassungen inklusive Besitzumschreibungen. Die kumulativen Spalten lassen sich **nicht** in Monatswerte umrechnen: sie zählen nur die noch zugelassenen Fahrzeuge, Differenzen überzeichnen deshalb den E-Anteil. `Sonstige` = Brennstoffzelle + Flüssiggas + Erdgas + unbenannt + Sonstige.
 - Der **Pkw-Bestand** (Tab »PKW-Bestand« im alten Sheet) geht nach `mobility_cars`, Stichtag = Monatsende. Diese Collection hat keine `update`-Spalte und führt die Region als Code statt UUID. Für kreisfreie Städte (AGS endet auf `000` und der Elternkreis hat die ersten fünf Stellen als Code) wird der Kreis-Code geschrieben, weil die Monatswerte dort liegen: Stuttgart → `08111`. Der geschriebene Schlüssel steht in der Slack-Nachricht (`region=08111, country=DE`); beim Übernehmen wird genau dieser Schlüssel verwendet.
 - Freigaben sind idempotent: der Status wird atomar von `pending` auf `applying` gesetzt, ein Doppelklick schreibt nicht doppelt. Beim Übernehmen werden bestehende Werte neu gelesen, gleiche Werte werden übersprungen.
 

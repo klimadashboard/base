@@ -38,13 +38,19 @@ export const DATASETS: Dataset[] = [
 		unit: "Anzahl Pkw",
 		fixedFields: (t) => ({ region: t.id, country: t.country }),
 		updateField: { name: "update", type: "date" },
-		guidance: `Monthly new passenger car registrations by fuel type.
-- Values are CUMULATIVE since 1 January of the same year (year-to-date), exactly as published. Do NOT convert them to monthly increments.
+		guidance: `New passenger car registrations by fuel type, one value per reporting month.
+- Values are MONTHLY: the registrations that happened in that month alone. They are NOT cumulative. (Until November 2026 this dataset held year-to-date values; it no longer does.)
+- Pick the right column. Stuttgart's export carries several that sound alike:
+  * "zulassungen_neufahrzeuge" / "Zulassungen von Neufahrzeugen" -> USE THIS. Monthly registrations of new vehicles.
+  * "neuzulassungen" and "neufahrzeuge" -> do NOT use. Despite the name these are cumulative since 1 January.
+  * "zulassungen" -> do NOT use. All registrations including used-vehicle transfers, a different metric with a much lower electric share.
+  * "anzahl" / "Bestand" / "Pkw insgesamt" -> do NOT use. That is the stock, dataset pkw_bestand.
+- If the file offers only cumulative columns, do NOT difference them into monthly values yourself: the cumulative figures are a surviving-stock count (cars deregistered later drop out), so differences overstate the electric share. Extract nothing from that table and explain why in warnings.
+- Sanity check against the existing rows shown above: values that climb steadily from January to December and reset each January are cumulative. Report that as a warning and extract nothing.
 - period = last day of the reporting month as YYYY-MM-DD (e.g. "Ende September 2026" -> 2026-09-30).
-- Use only the "Neuzulassungen" columns (absolute numbers, not percentages). Ignore "Bestand"/"Pkw insgesamt" columns — those are a different dataset.
 - Category mapping: Benzin -> Benzin, Diesel -> Diesel, Hybrid (ohne Plug-in) -> Hybrid, Plug-in-Hybrid -> Plug-in-Hybrid, Elektro (BEV) -> Elektro.
-- Sonstige = SUM of every remaining fuel type: Brennstoffzelle + Flüssiggas + Erdgas + Sonstige (Ethanol, Wasserstoff, ...). Do this sum yourself and mention it in notes.
-- Do not emit a total row. The six categories must add up to the published total ("Pkw insgesamt") — check this and report any mismatch as a warning.`,
+- Sonstige = SUM of every remaining fuel type: Brennstoffzelle + Flüssiggas + Erdgas + unbenannt + Sonstige (Ethanol, Wasserstoff, ...). Do this sum yourself and mention it in notes.
+- Do not emit a total row. The six categories must add up to that month's published total of new registrations — check this and report any mismatch as a warning. Do not compare against "Pkw insgesamt", which is the stock.`,
 	},
 	{
 		id: "pkw_bestand",
@@ -57,7 +63,7 @@ export const DATASETS: Dataset[] = [
 		// mobility_cars keys regions by their official code, not by uuid
 		fixedFields: (t) => ({ region: t.ags, country: t.country }),
 		guidance: `Registered passenger cars (stock, "Bestand") by fuel type at the end of a month.
-- Values are the stock on the reporting date, NOT new registrations. Use only the "Bestand" columns (absolute numbers, not percentages); ignore "Neuzulassungen" columns — those are a different dataset (pkw_neuzulassungen).
+- Values are the stock on the reporting date, NOT new registrations. Use only the "Bestand" columns (in Stuttgart's export the column is called "anzahl"; absolute numbers, not percentages); ignore every "Zulassungen"/"Neuzulassungen"/"Neufahrzeuge" column — those belong to a different dataset (pkw_neuzulassungen).
 - period = last day of the reporting month as YYYY-MM-DD (e.g. "Stand 31.08.2026" -> 2026-08-31).
 - Category mapping: Benzin -> Benzin, Diesel -> Diesel, Hybrid (ohne Plug-in) -> Hybrid, Plug-in-Hybrid -> Plug-in-Hybrid, Elektro (BEV) -> Elektro.
 - Sonstige = SUM of every remaining fuel type: Brennstoffzelle + Flüssiggas + Erdgas + Sonstige (Ethanol, Wasserstoff, ...). Do this sum yourself and mention it in notes.
